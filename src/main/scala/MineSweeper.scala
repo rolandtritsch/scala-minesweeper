@@ -39,8 +39,8 @@ object MineSweeper {
       val expandedRows = rows + 2
       val expandedCols = cols + 2
       val expandedFields = (for {
-        r <- 0 until expandedRows
-        c <- 0 until expandedCols
+        r <- 0 to expandedRows - 1
+        c <- 0 to expandedCols - 1
       } yield {
         if(r == 0) 0
         else if(r == expandedRows - 1) 0
@@ -54,6 +54,44 @@ object MineSweeper {
   }
 
   case class ExpandedNumField(override val rows: Int, override val cols: Int, override val fields: List[List[Int]]) extends Field[Int](rows, cols, fields) {
+    def count: CountField = {
+      val countRows = rows - 2
+      val countCols = cols - 2
+      val countSquares = (for {
+        r <- 1 to countRows
+        c <- 1 to countCols
+      } yield {
+        List(
+          fields(r - 1)(c - 1),
+          fields(r - 1)(c),
+          fields(r - 1)(c + 1),
+          fields(r)(c - 1),
+          fields(r)(c),
+          fields(r)(c + 1),
+          fields(r + 1)(c - 1),
+          fields(r + 1)(c),
+          fields(r + 1)(c + 1)
+        )
+      }).toList
+      val countFields = countSquares.map(_.sum).grouped(countCols).toList
+      CountField(countRows, countCols, countFields)
+    }
+  }
+
+  case class CountField(override val rows: Int, override val cols: Int, override val fields: List[List[Int]]) extends Field[Int](rows, cols, fields) {
+    def clue(mineField: RawField): RawField = {
+      require(mineField.rows == rows && mineField.cols == cols, "mineField.rows == rows && mineField.cols == cols violated")
+      val clueField = (for {
+        r <- 0 to mineField.rows - 1
+        c <- 0 to mineField.cols - 1
+      } yield {
+        mineField.fields(r)(c) match {
+          case '*' => '*'
+          case '.' => fields(r)(c).toString.charAt(0)
+        }
+      }).toList.grouped(cols).toList
+      RawField(rows, cols, clueField)
+    }
   }
 
   /** Read a file of the format ...
@@ -94,4 +132,15 @@ object MineSweeper {
 
     RawField(rows, cols, fields)
   } ensuring(rf => rf.fields.size == rf.rows && rf.fields.head.size == rf.cols)
+
+  def main(args: Array[String]): Unit = {
+    require(args.size == 1, "Usage: MineSweeper <fileName>")
+
+    val fileName = args(0)
+    val rawField = readFileIntoRawField(fileName)
+    val countField = rawField.toNumField.expand.count
+    val clueField = countField.clue(rawField)
+
+    clueField.fields.foreach(l => println(l.mkString))
+  }
 }
