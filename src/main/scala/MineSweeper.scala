@@ -1,28 +1,8 @@
 package minesweeper
 
 object MineSweeper {
-  import scala.collection.AbstractIterator
 
-  class FieldIterator[T](f: Field[T]) extends AbstractIterator[(Int, Int, T)] {
-    var currentIndex = 0
-
-    override def hasNext: Boolean = currentIndex < (f.rows * f.cols)
-    override def next: (Int, Int, T) = {
-      val currentRow = currentIndex / f.cols
-      val currentCol = currentIndex % f.cols
-      val currentField = f.fields(currentRow)(currentCol)
-      currentIndex = currentIndex + 1
-      (currentRow, currentCol, currentField)
-    }
-  }
-
-  abstract class Field[T](val rows: Int, val cols: Int, val fields: List[List[T]]) {
-    def iterator = new FieldIterator[T](this)
-
-    def apply(row: Int, col: Int): T = {
-      fields(row)(cols)
-    }
-  }
+  abstract class Field[T](val rows: Int, val cols: Int, val fields: List[List[T]])
 
   case class RawField(override val rows: Int, override val cols: Int, override val fields: List[List[Char]]) extends Field[Char](rows, cols, fields) {
     def toNumField: NumField = {

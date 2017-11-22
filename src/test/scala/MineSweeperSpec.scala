@@ -65,27 +65,4 @@ class MineSweeperSpec extends FlatSpec with Matchers {
     readFileHelper("/4x4-kata.txt").toNumField.expand.count.clue(readFileHelper("/4x4-kata.txt")) should equal (RawField(4, 4, "*10022101*101110".toList.grouped(4).toList))
     readFileHelper("/3x5-kata.txt").toNumField.expand.count.clue(readFileHelper("/3x5-kata.txt")) should equal (RawField(3, 5, "**100332001*100".toList.grouped(5).toList))
   }
-
-  "FieldIterator" should "return all squares of a field" in {
-    val it = readFileHelper("/3x5-kata.txt").toNumField.iterator
-    val itResult = (for (f <- it) yield f).toList
-    val result = List(
-      (0, 0, 1),
-      (0, 1, 1),
-      (0, 2, 0),
-      (0, 3, 0),
-      (0, 4, 0),
-      (1, 0, 0),
-      (1, 1, 0),
-      (1, 2, 0),
-      (1, 3, 0),
-      (1, 4, 0),
-      (2, 0, 0),
-      (2, 1, 1),
-      (2, 2, 0),
-      (2, 3, 0),
-      (2, 4, 0)
-    )
-    itResult should equal(result)
-  }
 }
