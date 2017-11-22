@@ -43,26 +43,26 @@ class MineSweeperSpec extends FlatSpec with Matchers {
   }
 
   it should "return an expanded num field, for a given num field" in {
-    readFileHelper("/1x1-mine.txt").toNumField.expand should equal (ExpandedNumField(3, 3, List(List(0, 0, 0), List(0, 1, 0), List(0, 0, 0))))
-    readFileHelper("/1x1-save.txt").toNumField.expand should equal (ExpandedNumField(3, 3, List(List(0, 0, 0), List(0, 0, 0), List(0, 0, 0))))
-    readFileHelper("/3x5-full.txt").toNumField.expand should equal (ExpandedNumField(5, 7, "00000000111110011111001111100000000".toList.map(_.toString.toInt).grouped(7).toList))
+    readFileHelper("/1x1-mine.txt").toNumField.toExpNumField should equal (ExpandedNumField(3, 3, List(List(0, 0, 0), List(0, 1, 0), List(0, 0, 0))))
+    readFileHelper("/1x1-save.txt").toNumField.toExpNumField should equal (ExpandedNumField(3, 3, List(List(0, 0, 0), List(0, 0, 0), List(0, 0, 0))))
+    readFileHelper("/3x5-full.txt").toNumField.toExpNumField should equal (ExpandedNumField(5, 7, "00000000111110011111001111100000000".toList.map(_.toString.toInt).grouped(7).toList))
   }
 
   it should "return a count field, for a given expanded num field" in {
-    readFileHelper("/1x1-mine.txt").toNumField.expand.count should equal (CountField(1, 1, List(List(1))))
-    readFileHelper("/1x1-save.txt").toNumField.expand.count should equal (CountField(1, 1, List(List(0))))
-    readFileHelper("/3x5-full.txt").toNumField.expand.count should equal (CountField(3, 5, "466646999646664".toList.map(_.toString.toInt).grouped(5).toList))
-    readFileHelper("/6x4-save.txt").toNumField.expand.count should equal (CountField(6, 4, "000000000000000000000000".toList.map(_.toString.toInt).grouped(4).toList))
-    readFileHelper("/4x4-kata.txt").toNumField.expand.count should equal (CountField(4, 4, "1100221011101110".toList.map(_.toString.toInt).grouped(4).toList))
-    readFileHelper("/3x5-kata.txt").toNumField.expand.count should equal (CountField(3, 5, "221003320011100".toList.map(_.toString.toInt).grouped(5).toList))
+    readFileHelper("/1x1-mine.txt").toNumField.toExpNumField.toCountField should equal (CountField(1, 1, List(List(1))))
+    readFileHelper("/1x1-save.txt").toNumField.toExpNumField.toCountField should equal (CountField(1, 1, List(List(0))))
+    readFileHelper("/3x5-full.txt").toNumField.toExpNumField.toCountField should equal (CountField(3, 5, "466646999646664".toList.map(_.toString.toInt).grouped(5).toList))
+    readFileHelper("/6x4-save.txt").toNumField.toExpNumField.toCountField should equal (CountField(6, 4, "000000000000000000000000".toList.map(_.toString.toInt).grouped(4).toList))
+    readFileHelper("/4x4-kata.txt").toNumField.toExpNumField.toCountField should equal (CountField(4, 4, "1100221011101110".toList.map(_.toString.toInt).grouped(4).toList))
+    readFileHelper("/3x5-kata.txt").toNumField.toExpNumField.toCountField should equal (CountField(3, 5, "221003320011100".toList.map(_.toString.toInt).grouped(5).toList))
   }
 
   it should "return a clue field, for a given count field" in {
-    readFileHelper("/1x1-mine.txt").toNumField.expand.count.clue(readFileHelper("/1x1-mine.txt")) should equal (RawField(1, 1, List(List('*'))))
-    readFileHelper("/1x1-save.txt").toNumField.expand.count.clue(readFileHelper("/1x1-save.txt")) should equal (RawField(1, 1, List(List('0'))))
-    readFileHelper("/3x5-full.txt").toNumField.expand.count.clue(readFileHelper("/3x5-full.txt")) should equal (RawField(3, 5, "***************".toList.grouped(5).toList))
-    readFileHelper("/6x4-save.txt").toNumField.expand.count.clue(readFileHelper("/6x4-save.txt")) should equal (RawField(6, 4, "000000000000000000000000".toList.grouped(4).toList))
-    readFileHelper("/4x4-kata.txt").toNumField.expand.count.clue(readFileHelper("/4x4-kata.txt")) should equal (RawField(4, 4, "*10022101*101110".toList.grouped(4).toList))
-    readFileHelper("/3x5-kata.txt").toNumField.expand.count.clue(readFileHelper("/3x5-kata.txt")) should equal (RawField(3, 5, "**100332001*100".toList.grouped(5).toList))
+    readFileHelper("/1x1-mine.txt").toNumField.toExpNumField.toCountField.toClueField(readFileHelper("/1x1-mine.txt")) should equal (RawField(1, 1, List(List('*'))))
+    readFileHelper("/1x1-save.txt").toNumField.toExpNumField.toCountField.toClueField(readFileHelper("/1x1-save.txt")) should equal (RawField(1, 1, List(List('0'))))
+    readFileHelper("/3x5-full.txt").toNumField.toExpNumField.toCountField.toClueField(readFileHelper("/3x5-full.txt")) should equal (RawField(3, 5, "***************".toList.grouped(5).toList))
+    readFileHelper("/6x4-save.txt").toNumField.toExpNumField.toCountField.toClueField(readFileHelper("/6x4-save.txt")) should equal (RawField(6, 4, "000000000000000000000000".toList.grouped(4).toList))
+    readFileHelper("/4x4-kata.txt").toNumField.toExpNumField.toCountField.toClueField(readFileHelper("/4x4-kata.txt")) should equal (RawField(4, 4, "*10022101*101110".toList.grouped(4).toList))
+    readFileHelper("/3x5-kata.txt").toNumField.toExpNumField.toCountField.toClueField(readFileHelper("/3x5-kata.txt")) should equal (RawField(3, 5, "**100332001*100".toList.grouped(5).toList))
   }
 }

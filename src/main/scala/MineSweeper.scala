@@ -1,10 +1,46 @@
 package minesweeper
 
+/** Implements a solution to the [[http://codingdojo.org/kata/Minesweeper CoderDojo Minesweeper Kata]].
+  *
+  * It reads a minefield from a file and then builds the clues from it
+  * (the number of mines around a given field).
+  *
+  * I am going about it in a slightly unorthodox way, by transforming
+  * the orginal field into a field of numbers.
+  *
+  * I then expand that field by putting zeros around it, because that
+  * allows me to traverse the field and just select the 8 fields that
+  * are around a field (even if the field is in a corner or at the edge
+  * of the field).
+  *
+  * I then just some up the 8 fields (plus the field in the middle) and
+  * I am done.
+  */
 object MineSweeper {
 
+  /** The base class for all kinds/types of fields.
+    *
+    * @param rows The number of rows
+    * @param cols The number of cols
+    * @param fields The field
+    * @tparam T The type of the field (can be Char or Int)
+    */
   abstract class Field[T](val rows: Int, val cols: Int, val fields: List[List[T]])
 
+  /** The [[RawField]]
+    *
+    * {{{
+    * 4 4
+    * *...
+    * ....
+    * .*..
+    * ....
+    * }}}
+    */
   case class RawField(override val rows: Int, override val cols: Int, override val fields: List[List[Char]]) extends Field[Char](rows, cols, fields) {
+
+    /** @return The [[NumField]] for this [[RawField]]
+      */
     def toNumField: NumField = {
       val numFields = fields.map {_.map {
         case '.' => 0
@@ -14,8 +50,25 @@ object MineSweeper {
     }
   }
 
+  /** The [[NumField]].
+    *
+    * {{{
+    * 4 4
+    * 1000
+    * 0000
+    * 0100
+    * 0000
+    * }}}
+    *
+    * This field shows where the mines are in numerical format.
+    *
+    * We need this later on to count the mines in a square.
+    */
   case class NumField(override val rows: Int, override val cols: Int, override val fields: List[List[Int]]) extends Field[Int](rows, cols, fields) {
-    def expand: ExpandedNumField = {
+
+    /** @return The [[ExpandedNumField]] for this [[NumField]]
+      */
+    def toExpNumField: ExpandedNumField = {
       val expandedRows = rows + 2
       val expandedCols = cols + 2
       val expandedFields = (for {
@@ -33,8 +86,56 @@ object MineSweeper {
     }
   }
 
+  /** The expanded num field.
+    *
+    * {{{
+    * 6 6
+    *  '000000'
+    * '0'1000'0'
+    * '0'0000'0'
+    * '0'0100'0'
+    * '0'0000'0'
+    *  '000000'
+    * }}}
+    *
+    * Surround the original field with zeros. This will allow us to count all mines in all
+    * squares easily (without having to worry about the edges).
+    */
   case class ExpandedNumField(override val rows: Int, override val cols: Int, override val fields: List[List[Int]]) extends Field[Int](rows, cols, fields) {
-    def count: CountField = {
+
+    /** Building the [[CountField]].
+      *
+      * Here comes the trick.
+      *
+      * On an [[ExpandedNumField]] we can just walk over the original [[NumField]] ...
+      *
+      * {{{
+      * 6 6
+      *  000000
+      * 0'1000'0
+      * 0'0000'0
+      * 0'0100'0
+      * 0'0000'0
+      *  000000
+      * }}}
+      *
+      * ... and can build squares of 9 numbers ...
+      *
+      * {{{
+      * 6 6
+      * '000'000
+      * '010'000
+      * '000'000
+      * 001000
+      * 000000
+      * 000000
+      * }}}
+      *
+      * ... that can then be sumed up to calc the clue for a given field.
+      *
+      * @return The [[CountField]] for this [[ExpandedNumField]]
+      */
+    def toCountField: CountField = {
       val countRows = rows - 2
       val countCols = cols - 2
       val countSquares = (for {
@@ -58,9 +159,35 @@ object MineSweeper {
     }
   }
 
+  /** The [[CountField]]
+    *
+    * {{{
+    * 4 4
+    * 1100
+    * 2210
+    * 1110
+    * 1110
+    * }}}
+    */
   case class CountField(override val rows: Int, override val cols: Int, override val fields: List[List[Int]]) extends Field[Int](rows, cols, fields) {
-    def clue(mineField: RawField): RawField = {
+    /** Construct the field with all of the clues.
+      *
+      * Use the [[CountField]] with the given mineField to construct the field with the clues.
+      *
+      * {{{
+      * 4 4
+      * *100
+      * 2210
+      * 1*10
+      * 1110
+      * }}}
+      *
+      * @param mineField The original mine field with the mine locations
+      * @return The [[RawField]] with all of the calculated clues
+      */
+    def toClueField(mineField: RawField): RawField = {
       require(mineField.rows == rows && mineField.cols == cols, "mineField.rows == rows && mineField.cols == cols violated")
+
       val clueField = (for {
         r <- 0 to mineField.rows - 1
         c <- 0 to mineField.cols - 1
@@ -76,11 +203,13 @@ object MineSweeper {
 
   /** Read a file of the format ...
     *
+    * {{{
     * 4 4
     * ..*.
     * .*..
     * **..
     * ....
+    * }}}
     *
     * ... and return a RawField.
     *
@@ -113,13 +242,17 @@ object MineSweeper {
     RawField(rows, cols, fields)
   } ensuring(rf => rf.fields.size == rf.rows && rf.fields.head.size == rf.cols)
 
+  /** The [[main]] function.
+    *
+    * @param args The filename to process.
+    */
   def main(args: Array[String]): Unit = {
     require(args.size == 1, "Usage: MineSweeper <fileName>")
 
     val fileName = args(0)
     val rawField = readFileIntoRawField(fileName)
-    val countField = rawField.toNumField.expand.count
-    val clueField = countField.clue(rawField)
+    val countField = rawField.toNumField.toExpNumField.toCountField
+    val clueField = countField.toClueField(rawField)
 
     clueField.fields.foreach(l => println(l.mkString))
   }
