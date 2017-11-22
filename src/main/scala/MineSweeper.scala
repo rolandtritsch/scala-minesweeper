@@ -6,55 +6,54 @@ object MineSweeper {
   class FieldIterator[T](f: Field[T]) extends AbstractIterator[(Int, Int, T)] {
     var currentIndex = 0
 
-    override def hasNext: Boolean = currentIndex < f.fields.size
+    override def hasNext: Boolean = currentIndex < (f.rows * f.cols)
     override def next: (Int, Int, T) = {
       val currentRow = currentIndex / f.cols
       val currentCol = currentIndex % f.cols
-      val currentField = f.fields(currentIndex)
+      val currentField = f.fields(currentRow)(currentCol)
       currentIndex = currentIndex + 1
       (currentRow, currentCol, currentField)
     }
   }
 
-  abstract class Field[T](val rows: Int, val cols: Int, val fields: List[T]) {
+  abstract class Field[T](val rows: Int, val cols: Int, val fields: List[List[T]]) {
     def iterator = new FieldIterator[T](this)
 
     def apply(row: Int, col: Int): T = {
-      fields((row * cols) + col)
+      fields(row)(cols)
     }
   }
 
-  case class RawField(override val rows: Int, override val cols: Int, override val fields: List[Char]) extends Field[Char](rows, cols, fields) {
+  case class RawField(override val rows: Int, override val cols: Int, override val fields: List[List[Char]]) extends Field[Char](rows, cols, fields) {
     def toNumField: NumField = {
-      val numFields = fields.map {
+      val numFields = fields.map {_.map {
         case '.' => 0
         case '*' => 1
-      }
+      }}
       NumField(rows, cols, numFields)
     }
   }
 
-  case class NumField(override val rows: Int, override val cols: Int, override val fields: List[Int]) extends Field[Int](rows, cols, fields) {
+  case class NumField(override val rows: Int, override val cols: Int, override val fields: List[List[Int]]) extends Field[Int](rows, cols, fields) {
     def expand: ExpandedNumField = {
       val expandedRows = rows + 2
       val expandedCols = cols + 2
-      val iteratorFields = List.range(0, expandedRows * expandedCols)
-      val expandedFields = iteratorFields.map {
-        case i if i < expandedCols => 0
-        case i if i >= (expandedRows - 1) * expandedCols => 0
-        case i if (i + 1) % expandedCols == 0 => 0
-        case i if i % expandedCols == 0 => 0
-        case i => {
-          val r = (i / expandedCols) - 1
-          val c = (i % expandedCols) - 1
-          fields((r * cols) + c)
-        }
-      }
+      val expandedFields = (for {
+        r <- 0 until expandedRows
+        c <- 0 until expandedCols
+      } yield {
+        if(r == 0) 0
+        else if(r == expandedRows - 1) 0
+        else if(c == 0) 0
+        else if(c == expandedCols - 1) 0
+        else fields(r - 1)(c - 1)
+      }).toList.grouped(expandedCols).toList
+
       ExpandedNumField(expandedRows, expandedCols, expandedFields)
     }
   }
 
-  case class ExpandedNumField(override val rows: Int, override val cols: Int, override val fields: List[Int]) extends Field[Int](rows, cols, fields) {
+  case class ExpandedNumField(override val rows: Int, override val cols: Int, override val fields: List[List[Int]]) extends Field[Int](rows, cols, fields) {
   }
 
   /** Read a file of the format ...
@@ -88,12 +87,11 @@ object MineSweeper {
 
     val fields = fieldLines.map {l => {
       assert(l.size == cols, "l.size == cols violated")
-      l.toList
-    }}.flatten
+      val fs = l.toList
+      assert(fs.forall(".*".contains(_)), "Invalid char found")
+      fs
+    }}
 
     RawField(rows, cols, fields)
-  } ensuring(rf =>
-    rf.cols * rf.rows == rf.fields.size &&
-    rf.fields.forall(".*".contains(_))
-    )
+  } ensuring(rf => rf.fields.size == rf.rows && rf.fields.head.size == rf.cols)
 }
